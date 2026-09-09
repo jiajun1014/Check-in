@@ -12,7 +12,7 @@
     {
       "binding": "DB",
       "database_name": "leave-checkin-db",
-      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+      "database_id": "edba705b-6c96-4efd-a4b2-808e4973f875"
     }
   ]
 }
