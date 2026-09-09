@@ -22,17 +22,21 @@ function corsHeaders(request) {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
   };
 }
+// ===== 簽到設定 =====
+
+// 一天允許簽到的時段
 const CHECKIN_WINDOWS = [
   { start: "08:00", end: "09:00" },
   { start: "12:00", end: "13:00" },
-  { start: "17:00", end: "18:00" }
+  { start: "17:00", end: "18:00" },
+  { start: "21:00", end: "22:00" }   // ← 新增這段
 ];
 
-// 簽到地點
+// 簽到地點：新北市樹林區大安路118號
 const CHECKIN_AREA = {
-  latitude: 25.0330,     // ← 改成你的簽到地點緯度
-  longitude: 121.5654,   // ← 改成你的簽到地點經度
-  radiusMeters: 200      // ← 允許半徑，單位：公尺
+  latitude: 24.996680,
+  longitude: 121.421019,
+  radiusMeters: 200
 };
 
 
