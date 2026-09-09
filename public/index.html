@@ -453,38 +453,138 @@ function render(){
 }
 
 async function checkIn(){
-  const today = todayStr();
-  if(state.lastDate === today){
-    document.getElementById('stampGroup').classList.add('shake');
-    setTimeout(() => document.getElementById('stampGroup').classList.remove('shake'), 400);
+
+  const errorMsg = document.getElementById('errorMsg');
+  const hint = document.getElementById('stampHint');
+
+  errorMsg.textContent = '';
+
+  // 檢查瀏覽器是否支援定位
+  if (!navigator.geolocation) {
+    errorMsg.textContent = '這個裝置不支援定位功能。';
     return;
   }
-  const previousTotal = state.totalCount;
-  const newDates = state.dates.includes(today) ? state.dates : [...state.dates, today];
-  const prevState = JSON.parse(JSON.stringify(state));
-  state = Object.assign({}, state, {
-    totalCount: previousTotal + 1,
-    dates: newDates.slice(-120),
-    lastDate: today
-  });
-  try{ await saveState(); }
-  catch(e){
-    state = prevState;
-    render();
-    document.getElementById('errorMsg').textContent = '本次簽到暫時無法儲存,請稍後再試。';
-    return;
-  }
-  document.getElementById('stampGroup').classList.add('impact');
-  setTimeout(() => document.getElementById('stampGroup').classList.remove('impact'), 450);
-  render();
-  const prevCycles = Math.floor(previousTotal / GOAL_DAYS);
-  const nextCycles = Math.floor(state.totalCount / GOAL_DAYS);
-  if(nextCycles > prevCycles){
-    state.redeemedCount += (nextCycles - prevCycles);
-    try{ await saveState(); }catch(e){}
-    render();
-    document.getElementById('overlay').classList.add('show');
-  }
+
+  hint.textContent = '正在確認你的位置...';
+
+
+  navigator.geolocation.getCurrentPosition(
+
+    // ===== 成功取得 GPS =====
+    async position => {
+
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+
+      try {
+
+        // 傳 GPS 給 Worker
+        const result = await api('/api/checkin', {
+          method: 'POST',
+          body: JSON.stringify({
+            latitude,
+            longitude
+          })
+        });
+
+
+        // ===== Worker 驗證通過 =====
+
+        const today = result.date;
+        const previousTotal = state.totalCount;
+
+        if (!state.dates.includes(today)) {
+          state.dates.push(today);
+          state.totalCount += 1;
+        }
+
+        state.dates = state.dates.slice(-120);
+        state.lastDate = today;
+
+
+        try {
+          await saveState();
+        } catch(e) {
+          errorMsg.textContent = '簽到成功，但本機紀錄暫時無法儲存。';
+        }
+
+
+        // 蓋章動畫
+        document.getElementById('stampGroup').classList.add('impact');
+
+        setTimeout(() => {
+          document.getElementById('stampGroup').classList.remove('impact');
+        }, 450);
+
+
+        render();
+
+
+        // ===== 檢查是否達到 90 天 =====
+
+        const prevCycles = Math.floor(previousTotal / GOAL_DAYS);
+        const nextCycles = Math.floor(state.totalCount / GOAL_DAYS);
+
+        if(nextCycles > prevCycles){
+
+          state.redeemedCount += (nextCycles - prevCycles);
+
+          try {
+            await saveState();
+          } catch(e) {}
+
+          render();
+
+          document.getElementById('overlay').classList.add('show');
+        }
+
+      } catch(e) {
+
+        // Worker 回傳：
+        // 不在時間內 / 距離太遠 / 今天已簽到
+        errorMsg.textContent = e.message;
+
+        render();
+      }
+    },
+
+
+    // ===== GPS 取得失敗 =====
+    error => {
+
+      if(error.code === 1){
+
+        errorMsg.textContent =
+          '請允許瀏覽器取得你的位置，才能完成簽到。';
+
+      }else if(error.code === 2){
+
+        errorMsg.textContent =
+          '目前無法取得你的位置，請確認 GPS 已開啟。';
+
+      }else if(error.code === 3){
+
+        errorMsg.textContent =
+          '取得位置逾時，請再試一次。';
+
+      }else{
+
+        errorMsg.textContent =
+          '無法取得目前位置。';
+      }
+
+      render();
+    },
+
+
+    // ===== GPS 設定 =====
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    }
+
+  );
 }
 
 function openLeaveModal(){
