@@ -32,13 +32,24 @@ const CHECKIN_WINDOWS = [
   { start: "22:00", end: "23:00" }   // ← 新增這段
 ];
 
-// 簽到地點：國立中興大學
+// // 簽到地點：國立中興大學
+// const CHECKIN_AREA = {
+//   latitude: 24.123806,
+//   longitude: 120.675194,
+//   radiusMeters: 200
+// };
+// //輔大
+// const CHECKIN_AREA = {
+//   latitude: 25.033649,
+//   longitude: 121.433255,
+//   radiusMeters: 200
+// };
+//家樂福
 const CHECKIN_AREA = {
-  latitude: 24.123806,
-  longitude: 120.675194,
+  latitude: 24.996680,
+  longitude: 121.421019,
   radiusMeters: 200
 };
-
 
 // 計算兩個 GPS 座標之間的距離
 function distanceMeters(lat1, lon1, lat2, lon2) {
