@@ -94,6 +94,100 @@ export default {
     }
 
     try {
+            // ===== Employee: Check in =====
+      if (url.pathname === "/api/checkin" && request.method === "POST") {
+
+        const body = await readJson(request);
+        const token = request.headers.get("X-User-Token");
+
+        if (!token) {
+          return json({ error: "缺少使用者識別" }, 401);
+        }
+
+        const latitude = Number(body?.latitude);
+        const longitude = Number(body?.longitude);
+
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+          return json({ error: "無法取得有效的位置" }, 400);
+        }
+
+
+        // 取得目前台灣時間
+        const taiwan = getTaiwanTime();
+
+
+        // ===== 檢查時間 =====
+        if (!isAllowedTime(taiwan.time)) {
+          return json({
+            error: "目前不在允許簽到的時段"
+          }, 403);
+        }
+
+
+        // ===== 計算與指定地點的距離 =====
+        const distance = distanceMeters(
+          latitude,
+          longitude,
+          CHECKIN_AREA.latitude,
+          CHECKIN_AREA.longitude
+        );
+
+
+        // ===== 檢查位置 =====
+        if (distance > CHECKIN_AREA.radiusMeters) {
+          return json({
+            error: `目前距離簽到地點約 ${Math.round(distance)} 公尺，超出允許範圍`
+          }, 403);
+        }
+
+
+        // ===== 檢查今天是否已經簽到 =====
+        const existing = await env.DB.prepare(`
+          SELECT id
+          FROM checkins
+          WHERE requester_token = ?
+          AND date = ?
+        `).bind(
+          token,
+          taiwan.date
+        ).first();
+
+        if (existing) {
+          return json({
+            error: "今天已經簽到過了"
+          }, 409);
+        }
+
+
+        // ===== 寫入 D1 =====
+        await env.DB.prepare(`
+          INSERT INTO checkins
+          (
+            date,
+            checked_at,
+            requester_token,
+            latitude,
+            longitude,
+            distance_m
+          )
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).bind(
+          taiwan.date,
+          new Date().toISOString(),
+          token,
+          latitude,
+          longitude,
+          Math.round(distance)
+        ).run();
+
+
+        return json({
+          ok: true,
+          date: taiwan.date,
+          time: taiwan.time,
+          distance: Math.round(distance)
+        });
+      }
       // Employee: create request
       if (url.pathname === "/api/requests" && request.method === "POST") {
         const body = await readJson(request);
