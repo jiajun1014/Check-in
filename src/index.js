@@ -22,7 +22,69 @@ function corsHeaders(request) {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
   };
 }
+const CHECKIN_WINDOWS = [
+  { start: "08:00", end: "09:00" },
+  { start: "12:00", end: "13:00" },
+  { start: "17:00", end: "18:00" }
+];
 
+// 簽到地點
+const CHECKIN_AREA = {
+  latitude: 25.0330,     // ← 改成你的簽到地點緯度
+  longitude: 121.5654,   // ← 改成你的簽到地點經度
+  radiusMeters: 200      // ← 允許半徑，單位：公尺
+};
+
+
+// 計算兩個 GPS 座標之間的距離
+function distanceMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const toRad = deg => deg * Math.PI / 180;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) *
+    Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) ** 2;
+
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+
+// 取得台灣時間
+function getTaiwanTime() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).formatToParts(new Date());
+
+  const obj = {};
+
+  for (const p of parts) {
+    obj[p.type] = p.value;
+  }
+
+  return {
+    date: `${obj.year}-${obj.month}-${obj.day}`,
+    time: `${obj.hour}:${obj.minute}`
+  };
+}
+
+
+// 判斷是否位於允許簽到的時間
+function isAllowedTime(time) {
+  return CHECKIN_WINDOWS.some(window => {
+    return time >= window.start && time <= window.end;
+  });
+}
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
