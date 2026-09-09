@@ -32,10 +32,10 @@ const CHECKIN_WINDOWS = [
   { start: "21:00", end: "22:00" }   // ← 新增這段
 ];
 
-// 簽到地點：新北市樹林區大安路118號
+// 簽到地點：國立中興大學
 const CHECKIN_AREA = {
-  latitude: 24.996680,
-  longitude: 121.421019,
+  latitude: 24.123806,
+  longitude: 120.675194,
   radiusMeters: 200
 };
 
