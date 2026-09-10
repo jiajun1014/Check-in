@@ -1,7 +1,5 @@
 # 雲端每日簽到 / 請假系統（新版資料夾）
 
-這個資料夾是仿照 `leave-checkin-cloud(1).zip` 的 Cloudflare Worker + D1 專案結構建立，
-前端改成新版的「每日簽到」與「請假審核」Demo 外觀，資料仍使用 Worker API + D1，不使用共用 localStorage 來傳遞請假資料。
 
 ## 資料夾結構
 
